@@ -1461,24 +1461,26 @@ describe('GoogleAuth', () => {
       auth._checkIsGCE(() => {
         // Assert that the flags are set.
         assert.equal(true, auth.isGCE);
-        done();
-      });
-      const response = `{
-          "email":"test-creds@test-creds.iam.gserviceaccount.com",
-          "private_key": null
-        }`;
-      const scope =
-          nock('http://metadata.google.internal')
-              .get(
-                  '/computeMetadata/v1/instance/service-accounts/?recursive=true')
-              .reply(200, response);
-      auth.getCredentials((err, body) => {
-        assert(body);
-        assert.equal(
-            body!.client_email,
-            'test-creds@test-creds.iam.gserviceaccount.com');
-        assert.equal(body!.private_key, null);
-        scope.done();
+        it('should match the email from the metadata server', (done2) => {
+          const response = `{
+              "email":"test-creds@test-creds.iam.gserviceaccount.com",
+              "private_key": null
+            }`;
+          const scope =
+              nock('http://metadata.google.internal')
+                  .get(
+                      '/computeMetadata/v1/instance/service-accounts/?recursive=true')
+                  .reply(200, response);
+          auth.getCredentials((err, body) => {
+            assert(body);
+            assert.equal(
+                body!.client_email,
+                'test-creds@test-creds.iam.gserviceaccount.com');
+            assert.equal(body!.private_key, null);
+            scope.done();
+            done2();
+          });
+        });
         done();
       });
     });
@@ -1488,16 +1490,18 @@ describe('GoogleAuth', () => {
       auth._checkIsGCE(() => {
         // Assert that the flags are set.
         assert.equal(true, auth.isGCE);
-        done();
-      });
-      const scope =
-          nock('http://metadata.google.internal')
-              .get(
-                  '/computeMetadata/v1/instance/service-accounts/?recursive=true')
-              .reply(404);
-      auth.getCredentials((err, body) => {
-        assert.equal(true, err instanceof Error);
-        scope.done();
+        it('should return an error if metadata server is unreachable', (done2) => {
+          const scope =
+              nock('http://metadata.google.internal')
+                  .get(
+                      '/computeMetadata/v1/instance/service-accounts/?recursive=true')
+                  .reply(404);
+          auth.getCredentials((err, body) => {
+            assert.equal(true, err instanceof Error);
+            scope.done();
+            done2();
+          });
+        });
         done();
       });
     });
@@ -1507,16 +1511,18 @@ describe('GoogleAuth', () => {
       auth._checkIsGCE(() => {
         // Assert that the flags are set.
         assert.equal(true, auth.isGCE);
-        done();
-      });
-      const scope =
-          nock('http://metadata.google.internal')
-              .get(
-                  '/computeMetadata/v1/instance/service-accounts/?recursive=true')
-              .reply(200, {});
-      auth.getCredentials((err, body) => {
-        assert.equal(true, err instanceof Error);
-        scope.done();
+        it('should return an error if body is empty', (done2) => {
+          const scope =
+              nock('http://metadata.google.internal')
+                  .get(
+                      '/computeMetadata/v1/instance/service-accounts/?recursive=true')
+                  .reply(200, {});
+          auth.getCredentials((err, body) => {
+            assert.equal(true, err instanceof Error);
+            scope.done();
+            done2();
+          });
+        });
         done();
       });
     });
